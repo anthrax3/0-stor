@@ -94,7 +94,6 @@ class Report:
         keys = [k for k in scenarios]
         if len(keys) != 1:
             raise InvalidBenchmarkResult('output for exactly one scenario is expected in this context')
-
         self.scenario = scenarios[keys[0]]
 
         err = self.scenario.pop('error', None)
@@ -393,8 +392,7 @@ class Report:
                 plt.close()
 
                 # add the file name to the list of files
-                file_names.append(file_name)
-
+                file_names.append(file_name)               
                 # increment timeplot count
                 self.timeplots_added += 1
         return file_names

@@ -31,6 +31,13 @@ func (clientConf *ClientConf) validate() error {
 		}
 	}
 
+	for _, sc := range clientConf.Scenarios {
+		err := sc.validate()
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

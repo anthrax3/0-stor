@@ -1,0 +1,38 @@
+scenarios:
+  bench1:
+    zstor_config:
+      iyo:  # if empty or omitted, the zstordb servers set up for the benchmark 
+            # need to be run with the no-auth flag.
+            # For benching with authentication, provide it with valid itsyou.online credential
+        organization: "bench_org"
+        app_id: "an_iyo_bench_app_id"
+        app_secret: "an_iyo_bench_app_secret"
+      namespace: adisk
+      datastor:
+        shards:
+        - 127.0.0.1:45627
+        - 127.0.0.1:49861
+        - 127.0.0.1:37355
+      metastor:
+          shards: # If empty or omitted, an in memory metadata server will be used
+                  # Otherwise it will presume to have etcd servers running on these addresses
+            - 127.0.0.1:1300
+            - 127.0.0.1:1301
+      pipeline:
+        block_size: 4096
+        compression:
+          type: snappy # snappy is the default, other options: lz4, gzip
+          mode: default # default is the default, for gzip other options: best_speed, best_compression
+        encryption:
+          private_key: ab345678901234567890123456789012
+        distribution:
+          data_shards: 2
+          parity_shards: 1
+    bench_config:
+      method: write
+      result_output: per_second # if empty or invalid, perinterval in the result will be empty
+      duration: 5
+      operations: 0
+      key_size: 48
+      value_size: 128
+      clients: 1  # number of concurrent clients

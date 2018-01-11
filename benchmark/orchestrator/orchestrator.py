@@ -82,24 +82,17 @@ def main(argv):
                     if not benchmark.prime.empty():
                         config.alter_template(benchmark.prime.id, val_prime)
 
-                    # update deployment config
-                    config.update_deployment_config()
-
                     try:
                         # deploy zstor
                         config.deploy_zstor()
 
-                        # update config file
+                        # update benchmark config file
                         config.save(output_config)
 
-                        # wait for servers to start
-                        config.wait_local_servers_to_start()
-
                         # perform benchmarking
-                        config.deploy.bench_client(config=output_config,
-                                                    out=result_benchmark_file,
-                                                    profile=config.profile,
-                                                    profile_dir=config.new_profile_dir(report_directory))
+                        config.run_benchmark(config=output_config, 
+                                                out=result_benchmark_file, 
+                                                profile_dest=report_directory)
                         # stop zstor
                         config.stop_zstor()
                     except:

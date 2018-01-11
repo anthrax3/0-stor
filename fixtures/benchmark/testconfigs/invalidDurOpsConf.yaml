@@ -1,0 +1,32 @@
+scenarios:
+  bench1:
+    zstor_config:
+      namespace: adisk
+      datastor:
+        shards:
+          - 127.0.0.1:1200
+          - 127.0.0.1:1201
+          - 127.0.0.1:1202
+      metastor:
+          shards:
+            - 127.0.0.1:1300
+            - 127.0.0.1:1301
+          encryption:
+            private_key: ab345678901234567890123456789012
+      pipeline:
+        block_size: 4096
+        compression:
+          mode: default
+        encryption:
+          private_key: ab345678901234567890123456789012
+        distribution:
+          data_shards: 2
+          parity_shards: 1
+    bench_config:
+      method: write
+      result_output: per_second
+      duration:
+      operations:
+      key_size: 48
+      value_size: 128
+      clients: 1

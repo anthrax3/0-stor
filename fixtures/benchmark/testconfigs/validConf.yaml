@@ -1,0 +1,34 @@
+scenarios:
+  bench1:
+    zstor_config:
+      iyo:
+        organization: myorg  # itsyou.online organization name
+        app_id: appID
+        app_secret: secret
+      namespace: namespace1  # itsyou.online namespace
+      datastor:
+        shards:
+          - 127.0.0.1:12345
+          - 127.0.0.1:12346
+          - 127.0.0.1:12347
+      metastor:
+        shards:
+          - 127.0.0.1:2379
+          - 127.0.0.1:22379
+      pipeline:
+        block_size: 4096
+        compression:
+          mode: default
+        encryption:
+          private_key: ab345678901234567890123456789012
+        distribution:
+          data_shards: 2
+          parity_shards: 1
+    bench_config:
+      method: write
+      result_output: per_second
+      duration: 5
+      operations: 0
+      key_size: 48
+      value_size: 128
+      clients: 1
