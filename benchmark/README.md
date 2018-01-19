@@ -6,10 +6,10 @@
 
 Download the `zstor`repository.
 ```bash
-git clone https://github.com/chrisvdg/0-stor.git
+git clone https://github.com/zero-os/0-stor.git
 
 # or 
-go get github.com/chrisvdg/0-stor
+go get github.com/zero-os/0-stor
 # note: this will throw an error because the root of zstor does not contain any Go files.
 ```
 
