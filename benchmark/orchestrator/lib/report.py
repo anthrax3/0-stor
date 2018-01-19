@@ -18,6 +18,9 @@
     or writes per time unit, observed during the benchmark.
 """
 import os
+import matplotlib
+# fixes: _tkinter.TclError: no display name and no $DISPLAY environment variable
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import yaml
 from lib.scenario import Scenario
