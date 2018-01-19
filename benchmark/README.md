@@ -4,9 +4,29 @@
 
 ## Getting started
 
+Download the `zstor`repository.
+```bash
+git clone https://github.com/chrisvdg/0-stor.git
+
+# or 
+go get github.com/chrisvdg/0-stor
+# note: this will throw an error because the root of zstor does not contain any Go files.
+```
+
 Compile and install the current version of `zstor` by running the following command in the `0-stor` root:
 ```bash
 make install
+```
+
+Make sure `etcd` is installed if benchmarking with `etcd` as metadata server. On how to install `etcd`, check the [etcd documentation](https://coreos.com/etcd/docs/latest/).
+Zstor requires	etcd 3.2.4 or any higher stable release.
+
+Install python dependencies:
+```bash
+pip3 install -r benchmark/orchestrator/requirements.txt
+
+# matplotlib dependency 
+sudo apt-get install python3-tk
 ```
 
 To start the benchmarking, provide a YAML [config file](#orchestrator-config-file) for the `benchmark orchestrator` (`0-stor/benchmark/orchestrator/orchestrator.py`) and run the `orchestrator` Python script:
@@ -73,20 +93,16 @@ benchmarks: # list of benchmark scenarios
       compression: mode       # id of the secondary parameter that is being benchmarked
     range: default, best_speed, best_compression    
 template:         # config for benchmark client
-  zstor_config:   
+  zstor_config:  
     namespace: mynamespace # itsyou.online namespace
-    iyo:  # itsyou.online authentification token
-      organization: myorg  # itsyou.online organization name
-      app_id: appID        # itsyou.online Application ID
-      app_secret: secret   # itsyou.online Secret
-    pipeline:
-      block_size: 2048 
-      compression:  # snappy is the default, other options: lz4, gzip
-        type: gzip # snappy is the default, other options: lz4, gzip
-        mode: default # default is the default, for gzip other options: best_speed, best_compression
-      distribution:
-        data_shards: 2
-        parity_shards: 1
+    datastor:
+      pipeline:
+        block_size: 4096
+        compression:
+          mode: default
+        distribution:
+          data_shards: 2
+          parity_shards: 1
     metastor:
       meta_shards_nr: 2
   bench_config:
