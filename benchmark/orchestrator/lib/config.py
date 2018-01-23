@@ -37,7 +37,7 @@ PARAMETERS = {'block_size',
               'parity_shards',
               'meta_shards_nr',
               'zstordb_jobs'}
-PARAMETERS_DICT = {'encryption': 'type',
+PARAMETERS_DICT = {'encryption': {'type', 'private_key'},
                    'compression': {'type', 'mode'}}
 
 PROFILES = {'cpu', 'mem', 'trace', 'block'}
@@ -86,24 +86,30 @@ class Config:
 
     def new_profile_dir(self, path=""):
         """
-        Create new directory for profile information in given path and dumps current config
+        Create new directory for profile information in given path and dump current config
+        Returns zstordb profile dir and client profile dir
         """
         if self.profile:
-            directory = '%s/profile_information'%path
+            directory = os.path.join(path, 'profile_information')
             if not os.path.exists(directory):
                 os.makedirs(directory)
-            directory = '%s/profile_%s'%(directory,str(self.count_profile))         
+            directory = os.path.join(directory, 'profile_' + str(self.count_profile))
             if not os.path.exists(directory):
                 os.makedirs(directory)
-            file = "%s/config.yaml"%directory
+
+            file = os.path.join(directory, 'config.yaml')
             with open(file, 'w+') as outfile:
                 yaml.dump({'scenarios': {'scenario': self.template}}, 
                             outfile, 
                             default_flow_style=False, 
-                            default_style='')             
-            self.count_profile += 1    
-            return directory
-        return "" 
+                            default_style='')
+
+            zstordb_dir = os.path.join(directory, 'zstordb')
+            zstor_client_dir = os.path.join(directory, 'zstorclient')
+
+            self.count_profile += 1
+            return zstordb_dir, zstor_client_dir
+        return "", "" 
 
     def benchmark_generator(self,benchmarks):
         """
@@ -177,12 +183,18 @@ class Config:
         if IYOtoken:
             self.no_auth = False
 
-    def deploy_zstor(self):
-        """ Run zstordb and etcd servers """
+    def deploy_zstor(self, profile=None, profile_dir="profile_zstordb"):
+        """
+        Run zstordb and etcd servers
+        Profile parameters will be used for zstordb
+        """
 
         self.deploy.run_zstordb_servers(servers=self.data_shards_nr,
                                         no_auth=self.no_auth,
-                                        jobs=self.zstordb_jobs)
+                                        jobs=self.zstordb_jobs,
+                                        profile=profile,
+                                        profile_dir=profile_dir)
+
         self.deploy.run_etcd_servers(servers=self.meta_shards_nr)
 
         self.datastor.update({'shards': self.deploy.data_shards})

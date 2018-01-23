@@ -278,7 +278,7 @@ class Report:
                 outfile.write('\n```')
                 outfile.write("\n _____________ \n")
                 for file in files:
-                    outfile.write("\n![Fig](../{0}) \n".format(file))
+                    outfile.write("\n![Fig]({0}) \n".format(file))
 
     def _plot_per_interval(self):
         """ Create timeplots """
@@ -310,14 +310,15 @@ class Report:
                 plt.ylabel('operations per '+time_unit_literal[4:])
 
                 # define file name of the figure
-                file = '{0}/plot_per_interval_{1}.png'.format(self.directory, str(self.timeplots_added))
+                file_name = 'plot_per_interval_{0}.png'.format(str(self.timeplots_added))
+                file = '{0}/{1}'.format(self.directory, file_name)
 
                 # save figure to file
                 plt.savefig(file)
                 plt.close()
 
                 # add the file name to the list of files
-                file_names.append(file)
+                file_names.append(file_name)
 
                 # increment timeplot count
                 self.timeplots_added += 1
