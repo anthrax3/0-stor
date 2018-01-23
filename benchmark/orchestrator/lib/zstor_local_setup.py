@@ -16,6 +16,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+import signal
 from random import randint
 import socket
 
@@ -69,7 +70,7 @@ class SetupZstor:
             if profile and is_profile_flag(profile):
                 args.extend(("--profile-mode", profile))
 
-                profile_dir_zstordb = os.path.join(profile_dir, "zstordb" + str(i))
+                profile_dir_zstordb = profile_dir + "_" + str(i)
 
                 if not os.path.exists(profile_dir_zstordb):
                     os.makedirs(profile_dir_zstordb)
@@ -84,8 +85,12 @@ class SetupZstor:
     # stop zstordb servers
     def stop_zstordb_servers(self):
         for node in self.zstor_nodes:
-            node.terminate()
-
+            node.send_signal(signal.SIGINT)
+            try:
+                node.communicate(timeout=5)
+            except subprocess.TimeoutExpired:
+                print("Timed out waiting for zstordb to close, killing it")
+                node.kill()
 
         self.zstor_nodes = []
         self.data_shards = []

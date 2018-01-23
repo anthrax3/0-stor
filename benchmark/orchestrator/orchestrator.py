@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 # Copyright (C) 2017-2018 GIG Technology NV and Contributors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -98,8 +100,10 @@ def main(argv):
                     # update deployment config
                     config.update_deployment_config()
                     try:
+                        zstordb_prof_dir, client_prof_dir = config.new_profile_dir(report_directory)
+
                         # deploy zstor
-                        config.deploy_zstor()
+                        config.deploy_zstor(profile=config.profile, profile_dir=zstordb_prof_dir)
 
                         # update config file
                         config.save(output_config)
@@ -110,7 +114,7 @@ def main(argv):
                         config.deploy.bench_client(config=output_config,
                                                     out=result_benchmark_file,
                                                     profile=config.profile,
-                                                    profile_dir=config.new_profile_dir(report_directory))
+                                                    profile_dir=client_prof_dir)
                         # stop zstor
                         config.stop_zstor()
                     except:
