@@ -89,6 +89,7 @@ class Config:
         Create new directory for profile information in given path and dump current config
         Returns zstordb profile dir and client profile dir
         """
+
         if self.profile:
             directory = os.path.join(path, 'profile_information')
             if not os.path.exists(directory):
@@ -183,34 +184,26 @@ class Config:
         if IYOtoken:
             self.no_auth = False
 
-    def deploy_zstor(self, profile=None, profile_dir="profile_zstordb"):
+    def deploy_zstor(self, profile_dir="profile_zstordb"):
         """
         Run zstordb and etcd servers
         Profile parameters will be used for zstordb
         """
 
-        self.deploy.run_zstordb_servers(servers=self.data_shards_nr,
+        self.update_deployment_config()
+        self.deploy.run_data_shards(servers=self.data_shards_nr,
                                         no_auth=self.no_auth,
                                         jobs=self.zstordb_jobs,
-                                        profile=profile,
+                                        profile=self.profile,
                                         profile_dir=profile_dir)
 
-        self.deploy.run_etcd_servers(servers=self.meta_shards_nr)
+        self.deploy.run_meta_shards(servers=self.meta_shards_nr)
+
+        # wait for servers to start
+        self.wait_local_servers_to_start()
 
         self.datastor.update({'shards': self.deploy.data_shards})
         self.metastor.update({'db':{'endpoints': self.deploy.meta_shards}})
-
-    def stop_zstor(self):
-        """ Stop zstordb and etcd servers """
-
-        self.deploy.stop_etcd_servers()
-        self.deploy.stop_zstordb_servers()
-        self.deploy.cleanup()
-
-        self.datastor.update({'shards': []})
-        self.metastor.update({'db':{'endpoints': []}})
-
-
 
     def wait_local_servers_to_start(self):
         """ Check whether ztror and etcd servers are listening on the ports """
@@ -230,6 +223,20 @@ class Config:
                     servers += 1
                 if time.time() > timeout:
                     raise TimeoutError("couldn't run all required servers. Check that ports are free")
+    def run_benchmark(self, config='config.yaml', out='result.yaml', profile_dir='./profile'):
+        """ Runs benchmarking """
+
+        self.deploy.run_benchmark(config=config,
+                                    out=out,
+                                    profile=self.profile,
+                                    profile_dir=profile_dir)
+
+    def stop_zstor(self):
+        """ Stop zstordb and datastor servers """
+        self.deploy.stop()
+
+        self.datastor.update({'shards': []})
+        self.metastor.update({'db':{'endpoints': []}})       
 
 class Benchmark():
     """ Benchmark class is used defines and validates benchmark parameter """
