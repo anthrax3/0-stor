@@ -97,31 +97,26 @@ def main(argv):
                     if not benchmark.prime.empty():
                         config.alter_template(benchmark.prime.id, val_prime)
 
-                    # update deployment config
-                    config.update_deployment_config()
                     try:
                         zstordb_prof_dir, client_prof_dir = config.new_profile_dir(report_directory)
 
                         # deploy zstor
-                        config.deploy_zstor(profile=config.profile, profile_dir=zstordb_prof_dir)
+                        config.deploy_zstor(profile_dir=zstordb_prof_dir)
 
                         # update config file
                         config.save(output_config)
-                        # wait for servers to start
-                        config.wait_local_servers_to_start()
-                        #import ipdb; ipdb.set_trace()
+
                         # perform benchmarking
-                        config.deploy.bench_client(config=output_config,
-                                                    out=result_benchmark_file,
-                                                    profile=config.profile,
-                                                    profile_dir=client_prof_dir)
+                        config.run_benchmark(config=output_config, 
+                                                out=result_benchmark_file, 
+                                                profile_dir=client_prof_dir)                        
+
                         # stop zstor
                         config.stop_zstor()
                     except:
                         config.stop_zstor()
                         raise
                     # fetch results of the benchmark
-                    #import ipdb; ipdb.set_trace()
                     report.fetch_benchmark_output(result_benchmark_file)
                     
                     report.add_timeplot() # add timeplots to the report

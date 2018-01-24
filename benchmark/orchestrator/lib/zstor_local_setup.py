@@ -32,14 +32,14 @@ class SetupZstor:
         self.data_shards = []
         self.meta_shards = []
 
-    def run_zstordb_servers(self,
-                            servers=2,
-                            no_auth=True,
-                            jobs=0,
-                            profile=None,
-                            profile_dir="profile",
-                            data_dir=None,
-                            meta_dir=None):
+    def run_data_shards(self,
+                        servers=2,
+                        no_auth=True,
+                        jobs=0,
+                        profile=None,
+                        profile_dir="profile",
+                        data_dir=None,
+                        meta_dir=None):
         """  Start zstordb servers """
 
         for i in range(0, servers):
@@ -82,8 +82,8 @@ class SetupZstor:
 
             self.zstor_nodes.append(subprocess.Popen(args, stderr=subprocess.PIPE))
 
-    # stop zstordb servers
-    def stop_zstordb_servers(self):
+    # stop data shards
+    def stop_data_shards(self):
         for node in self.zstor_nodes:
             node.send_signal(signal.SIGINT)
             try:
@@ -95,7 +95,7 @@ class SetupZstor:
         self.zstor_nodes = []
         self.data_shards = []
 
-    def run_etcd_servers(self, servers=2, data_dir=""):
+    def run_meta_shards(self, servers=2, data_dir=""):
         """ Start etcd servers on random free ports """
 
         cluster_token = "etcd-cluster-" + str(randint(0, 99))
@@ -144,7 +144,7 @@ class SetupZstor:
                                                     stdout=subprocess.PIPE,
                                                     stderr=subprocess.PIPE))
 
-    def stop_etcd_servers(self):
+    def stop_meta_shards(self):
         """ Stop etcd servers """
 
         for node in self.etcd_nodes:
@@ -158,11 +158,18 @@ class SetupZstor:
         while self.cleanup_dirs:
             shutil.rmtree(self.cleanup_dirs.pop(), ignore_errors=True)
 
+    def stop(self):
+        """ Stop zstordb and etcd servers """        
+
+        self.stop_meta_shards()
+        self.stop_data_shards()
+        self.cleanup()
+
     @staticmethod
-    def bench_client(profile=None,
-                     profile_dir="profile_client",
-                     config="client_config.yaml",
-                     out="bench_result.yaml"):
+    def run_benchmark(profile=None,
+                        profile_dir="profile_client",
+                        config="client_config.yaml",
+                        out="bench_result.yaml"):
         """ Run benchmark client"""
 
         args = ["zstorbench",
