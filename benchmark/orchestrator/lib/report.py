@@ -37,6 +37,8 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import yaml
+import re
+import humanize
 from lib.scenario import Scenario
 from lib.scenario import InvalidBenchmarkResult
 from lib.scenario import TIME_UNITS
@@ -229,39 +231,30 @@ class Report:
         plt.close()
 
     def _add_table(self):
-        """ Add hidden table with data """
+        """ Add table with data """
 
         with open(self.main_file, 'a+') as outfile:
             # create a table
-            outfile.write("""\n <h3> Throughput, byte/s: </h3>
-            <head> 
-                <style>
-                    table, th, td {
-                        border: 1px solid black;
-                        border-collapse: collapse;
-                    }
-                    th, td {
-                        text-align: left;    
-                    }
-                </style>
-            </head>
-            <table>  
-                <tr> <th> """ + yaml.dump(self.aggregator.benchmark.prime.id) + "</th>")
+            prime_parameter = re.sub('[\n|.]', '', yaml.dump(self.aggregator.benchmark.prime.id))
+            second_parameter = re.sub('[\n|.]','', yaml.dump(self.aggregator.benchmark.second.id))
+            outfile.write('\n ### Throughput: \n')
+            
             # add titles to the columns
+            row_title = '| %s | '%prime_parameter
+            row_line = '|---|'
             for item in self.aggregator.benchmark.second.range:
                 if self.aggregator.benchmark.second.id:
-                    outfile.write("<th> {0} = {1} </th>".format(yaml.dump(self.aggregator.benchmark.second.id), item))
+                    row_title += '%s = %s |'%(second_parameter, item)
                 else:
-                    outfile.write("<th>  </th>") 
-            outfile.write(" </tr> ")
-
+                    row_title += ' |'
+                row_line += '---|'
+            outfile.write("%s \n%s \n "%(row_title, row_line))
             # fill in the table
             for row, val in enumerate(self.aggregator.benchmark.prime.range):
-                outfile.write("<tr> <th> {0} </th>".format(val))
+                row_values = '| %s |'%val
                 for col, _ in enumerate(self.aggregator.benchmark.second.range):
-                    outfile.write("<th> {0} </th>".format(str(self.aggregator.throughput[col][row])))
-                outfile.write("</tr>")
-            outfile.write("\n </table></details>\n")
+                    row_values +=  '%s/s |'%str(humanize.naturalsize(self.aggregator.throughput[col][row]))
+                outfile.write('%s \n'%row_values)
 
     def add_timeplot(self):
         """ Add timeplots to the report """
