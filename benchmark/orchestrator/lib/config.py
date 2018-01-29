@@ -265,12 +265,11 @@ class Benchmark():
             else:
                 if self.id not in PARAMETERS:
                     raise InvalidBenchmarkConfig("parameter {0} is not supported".format(self.id))
-             
             
             try:
-                self.range = split("\W+", self.range)
+                self.range = split("\W+", self.range.strip(',-!?.'))
             except:
-                pass
+                self.range = [self.range]
 
         else:
             # return empty Benchmark

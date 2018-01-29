@@ -51,7 +51,7 @@ FILTER_KEYS = {'organization',
                 'db',
                 'hashing',
                 'metastor'}
-BYTE_KEYS = { 'value_size', 'block_size'}
+BYTE_KEYS = { 'value_size', 'block_size', 'key_size'}
 
 class Aggregator:
     """ Aggregator aggregates average throughput over a set of benchmarks """
