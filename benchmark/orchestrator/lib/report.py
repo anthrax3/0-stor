@@ -51,6 +51,7 @@ FILTER_KEYS = {'organization',
                 'db',
                 'hashing',
                 'metastor'}
+BYTE_KEYS = { 'value_size', 'block_size'}
 
 class Aggregator:
     """ Aggregator aggregates average throughput over a set of benchmarks """
@@ -166,10 +167,32 @@ class Report:
         # add the table of the data sets
         self._add_table()
 
+    @staticmethod
+    def humanize_bitrate(value_in_bytes):
+        ''' Shortens large values of bitrate to KB/s or MB/s '''
+
+        kbyte, mbyte, byte = 'KB/s', 'MB/s', 'Byte/s'
+        dim = {byte: 1, kbyte: 1024, mbyte: 1048576}
+        if value_in_bytes > dim[mbyte]:
+            return value_in_bytes/dim[mbyte], dim[mbyte], mbyte
+
+        if value_in_bytes > dim[kbyte]:
+            return value_in_bytes/dim[kbyte], dim[kbyte], kbyte
+
+        return value_in_bytes, dim[byte], byte
+
+    def humanize_bytes(self, key, value):
+        if key in BYTE_KEYS:
+            return humanize.naturalsize(value)
+        return value
 
     def _bar_plot(self, fig_name):
         # define range  from prime parameter
+        prime_parameter = re.sub('[\n|...]', '', yaml.dump(self.aggregator.benchmark.prime.id))
+        second_parameter = re.sub('[\n|...]', '', yaml.dump(self.aggregator.benchmark.second.id))
+
         ticks_labels = self.aggregator.benchmark.prime.range
+        ticks_labels = [self.humanize_bytes(prime_parameter, tick) for tick in ticks_labels]
 
         # af first results are plot vs counting number of samples
         rng = [i for i, tmp in enumerate(ticks_labels)]
@@ -178,7 +201,7 @@ class Report:
         if len(self.aggregator.throughput) == 0:
             raise InvalidBenchmarkResult("results are empty")
 
-        max_throughput = max(max(self.aggregator.throughput))
+        max_throughput, reduce_times, dim_name = self.humanize_bitrate(max(max(self.aggregator.throughput)))
 
         # figure settings
         n_plots = len(self.aggregator.throughput[0]) # number of plots in the figure
@@ -186,7 +209,7 @@ class Report:
         width = rng[-1]/(n_samples*n_plots+1) # bar width
         gap = width/10  # gap between bars
         diff_y = 0.06 # minimal relative difference in throughput between neighboring bars
-        label_y_gap = max_throughput/100
+        label_y_gap = max_throughput/50
 
         # create figure
         fig, ax = plt.subplots()
@@ -200,28 +223,29 @@ class Report:
         # define color cycle
         ax.set_color_cycle(['blue', 'red', 'green', 'yellow', 'black', 'brown'])
 
-        ax.set_xlabel(yaml.dump(self.aggregator.benchmark.prime.id))
-        ax.set_ylabel('throughput, byte/s')
+        ax.set_xlabel(prime_parameter)
+        ax.set_ylabel('throughput, %s'%dim_name)
 
         # loop over data sets
         for i, th in enumerate(self.aggregator.throughput):
             # define plot label
-            lb = " "
+            legend = " "
             if self.aggregator.benchmark.second.id:
-                lb = "{0}={1}".format(self.aggregator.benchmark.second.id,
-                                      self.aggregator.benchmark.second.range[i])
+                value = self.aggregator.benchmark.second.range[i]
+                legend = "%s=%s"%(second_parameter,
+                                  self.humanize_bytes(second_parameter, value))
 
             # add bar plot to the figure
-            ax.bar(rng, th, width, label=lb)
+            th_humanized = [t/reduce_times for t in th]
+            ax.bar(rng, th_humanized, width, label=legend)
             lgd = ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
-            #plt.tight_layout(pad=20)
 
             # add labels to bars
             for j, v in enumerate(th):
                 if i:
                     if abs(v-self.aggregator.throughput[i-1][j])/max_throughput < diff_y:
                         continue
-                ax.text(rng[j]-width/2, v+label_y_gap, str(v), color='blue', fontweight='bold')
+                ax.text(rng[j]-width/2, v/reduce_times+label_y_gap, '%s/s'%humanize.naturalsize(v), color='black', fontweight='bold')
 
             # shift bars for the next plot
             rng = [x+gap+width for x in rng]
@@ -244,6 +268,8 @@ class Report:
             row_line = '|---|'
             for item in self.aggregator.benchmark.second.range:
                 if self.aggregator.benchmark.second.id:
+                    if second_parameter in BYTE_KEYS:
+                        item = humanize.naturalsize(item)
                     row_title += '%s = %s |'%(second_parameter, item)
                 else:
                     row_title += ' |'
@@ -251,6 +277,8 @@ class Report:
             outfile.write("%s \n%s \n "%(row_title, row_line))
             # fill in the table
             for row, val in enumerate(self.aggregator.benchmark.prime.range):
+                if prime_parameter in BYTE_KEYS:
+                    val = humanize.naturalsize(val)                
                 row_values = '| %s |'%val
                 for col, _ in enumerate(self.aggregator.benchmark.second.range):
                     row_values +=  '%s/s |'%str(humanize.naturalsize(self.aggregator.throughput[col][row]))
