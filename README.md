@@ -86,4 +86,4 @@ You can find more information about the different components in the `/docs` fold
 
 * [Server docs](docs/README.md)
 * [Client docs](client/README.md)
-* [CLI docs](cmd/zerostorcli/README.md)
+* [CLI docs](cmd/zstor/README.md)
