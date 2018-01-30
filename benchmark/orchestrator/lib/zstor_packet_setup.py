@@ -3,6 +3,7 @@ import packet, sys, time
 from lib.zstor_local_setup import is_profile_flag
 from threading import Thread, Lock
 from re import split
+import os
 
 # temp dir on packet device
 _TMP_DIR = '/tmp'
@@ -61,17 +62,17 @@ class SetupZstorPacket:
             self.zstordb_prof = True
             self.profile_dest = profile_dest
 
-        ts = []
+        threads = []
         for i in range(servers):
-            t = Thread(target=self._setup_new_zstordb_machine,\
-            args=[i, plan, os, facility, port, no_auth, jobs, profile, branch])
+            thread = Thread(target=self._setup_new_zstordb_machine,
+                       args=[i, plan, os, facility, port, no_auth, jobs, profile, branch])
 
-            t.start()
-            ts.append(t)
+            thread.start()
+            threads.append(thread)
 
         # Wait for threads to complete
-        for t in ts:
-            t.join()
+        for thread in threads:
+            thread.join()
 
     def _setup_new_zstordb_machine(self, i, plan, os, facility, port, no_auth, jobs, profile, branch):
         """
@@ -141,17 +142,17 @@ class SetupZstorPacket:
         can also be retrieved from SetupZstorPacket.meta_addresses
         """
         init_cluster = ""
-        ts = []
+        threads = []
 
         # setup and install etcd on packet machines concurrently
         for i in range(servers):
-            t = Thread(target=self._setup_new_meta_machine, args=[i, plan, os, facility, etcd_version])
-            t.start()
-            ts.append(t)
+            thread = Thread(target=self._setup_new_meta_machine, args=[i, plan, os, facility, etcd_version])
+            thread.start()
+            threads.append(thread)
 
         # Wait for threads to complete
-        for t in ts:
-            t.join()
+        for thread in threads:
+            thread.join()
 
         # build data to run etcd
         for name, ip in self._meta_ips.items():
@@ -195,8 +196,10 @@ class SetupZstorPacket:
         Sets up a zstorbench on a packet device
         """
         
-        node = self.p_client.startDevice(\
-            hostname=_ZSTORBENCH_HOSTNAME, plan=plan, os=os, facility=facility)
+        node = self.p_client.startDevice(hostname=_ZSTORBENCH_HOSTNAME, 
+                                         plan=plan, 
+                                         os=os, 
+                                         facility=facility)
 
         # install zstorbench
         install_zstor(node.prefab, branch)
@@ -210,7 +213,6 @@ class SetupZstorPacket:
         Make sure to run start_zstorbench before calling this.
         """
         prefab = self.zstorbench_prefab
-        
         # load bench config
         prefab.core.upload(config, _ZSTORBENCH_CONF)
 
@@ -219,7 +221,7 @@ class SetupZstorPacket:
         out_path_local = split('/', out)[:-1]
         if not out_path_local:
             out_path_local = '.'
-        full_path_out = '%s/%s'%(_ZSTORBENCH_OUT, out_name)
+        full_path_out = os.path.join(_ZSTORBENCH_OUT, out_name)
 
         cmd = "zstorbench --conf %s --out-benchmark %s" % (_ZSTORBENCH_CONF, full_path_out)
         if profile != None:

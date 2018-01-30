@@ -212,7 +212,7 @@ class Config:
 
     def deploy_zstor(self):
         """ Run zstordb and etcd servers """
-
+        
         self.update_deployment_config()
         if self.deployment == LOCAL_DEPLOYMENT:
             self.deploy.run_data_shards(servers=self.data_shards_nr,
@@ -221,7 +221,7 @@ class Config:
             self.deploy.run_meta_shards(servers=self.meta_shards_nr)            
             self.wait_local_servers_to_start()            
         if self.deployment == PACKETS_DEPLOYMENT:
-            t_data_shards = Thread(target=self.deploy.run_data_shards,
+            thread_data_shards = Thread(target=self.deploy.run_data_shards,
                                    kwargs={'servers' : self.data_shards_nr,
                                             'no_auth' : self.no_auth,
                                             'jobs' : self.zstordb_jobs,
@@ -230,30 +230,29 @@ class Config:
                                             'os' : self.packets['os'],
                                             'profile' : self.packets['profile'],
                                             'profile_dest' : self.packets['profile_dest']})
-            t_data_shards.start()            
+            thread_data_shards.start()            
 
-            t_meta_shards = Thread(target=self.deploy.run_meta_shards,
+            thread_meta_shards = Thread(target=self.deploy.run_meta_shards,
                                    kwargs={'servers' : self.meta_shards_nr,
                                             'facility' : self.packets['facility'],
                                             'plan' :self.packets['plan'],
                                             'os' : self.packets['os'],
                                             'etcd_version' : self.packets['etcd_version']})
-            t_meta_shards.start()
+            thread_meta_shards.start()
 
-            t_benchmark = Thread(target=self.deploy.init_benchmark,
+            thread_benchmark = Thread(target=self.deploy.init_benchmark,
                                     kwargs={'branch' : self.branch, 
                                             'facility' : self.packets['facility'],
                                             'plan' :self.packets['plan'],
                                             'os' : self.packets['os']})
-            t_benchmark.start()
+            thread_benchmark.start()
             
-            t_data_shards.join()
-            t_meta_shards.join()
-            t_benchmark.join()
+            thread_data_shards.join()
+            thread_meta_shards.join()
+            thread_benchmark.join()
                                                 
         self.zstor_config.update({'datastor':{'shards': self.deploy.data_shards}})
         self.metastor.update({'shards': self.deploy.meta_shards})
-
 
     def wait_local_servers_to_start(self):
         """ Check whether ztror and etcd servers are listening on the ports """
