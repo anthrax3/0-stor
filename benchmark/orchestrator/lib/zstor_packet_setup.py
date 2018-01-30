@@ -229,8 +229,6 @@ class SetupZstorPacket:
 
         # download results and profiling if required
         j.tools.prefab.local.core.dir_ensure(_ZSTORBENCH_OUT)
-        if not j.tools.prefab.local.core.file_exists(full_path_out):
-            raise RuntimeError('%s is not found'%full_path_out)
 
         prefab.core.download(full_path_out, out_path_local)
         if profile != None:
