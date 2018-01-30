@@ -63,9 +63,9 @@ class SetupZstorPacket:
             self.profile_dest = profile_dest
 
         threads = []
-        for i in range(servers):
+        for server in range(servers):
             thread = Thread(target=self._setup_new_zstordb_machine,
-                       args=[i, plan, os, facility, port, no_auth, jobs, profile, branch])
+                       args=[server, plan, os, facility, port, no_auth, jobs, profile, branch])
 
             thread.start()
             threads.append(thread)
@@ -206,8 +206,11 @@ class SetupZstorPacket:
 
         self.zstorbench_prefab = node.prefab
 
-    def run_benchmark(self, config="./config.yaml", out="result.yaml",\
-    profile=None, profile_dest="./zstor_client_profile/"):
+    def run_benchmark(self, 
+                      config="./config.yaml", 
+                      out="result.yaml",
+                      profile=None, 
+                      profile_dest="./zstor_client_profile/"):
         """
         Start a zstorbench benchmark.
         Make sure to run start_zstorbench before calling this.

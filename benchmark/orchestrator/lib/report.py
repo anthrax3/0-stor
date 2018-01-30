@@ -249,15 +249,20 @@ class Report:
         if len(self.aggregator.throughput) == 0:
             raise InvalidBenchmarkResult("results are empty")
 
-        max_throughput, reduce_times, dim_name = self.humanize_bitrate(max(max(self.aggregator.throughput)))
+        max_throughput = 0
+        for thr in self.aggregator.throughput:
+            try:
+                max_throughput = max(max_throughput, max(thr))
+            except TypeError:
+                max_throughput = max(self.aggregator.throughput)
+        max_throughput, reduce_times, dim_name = self.humanize_bitrate(max_throughput)
 
         # figure settings
         n_plots = len(self.aggregator.throughput[0]) # number of plots in the figure
         n_samples = len(rng) # number of samples for each data set
         width = rng[-1]/(n_samples*n_plots+1) # bar width
         gap = width/10  # gap between bars
-        diff_y = 0.06 # minimal relative difference in throughput between neighboring bars
-        label_y_gap = max_throughput/50
+        diff_y = 0.1 # minimal relative difference in throughput between neighboring bars
 
         # create figure
         fig, ax = plt.subplots()
@@ -303,7 +308,9 @@ class Report:
             rng = [x+gap+width for x in rng]
 
         # label axes
-        plt.savefig(self.directory+"/"+fig_name, bbox_extra_artists=(lgd,), bbox_inches='tight')
+        plt.savefig(os.path.join(self.directory,fig_name), 
+                    bbox_extra_artists=(lgd,), 
+                    bbox_inches='tight')
         plt.close()
 
     def _add_table(self):
