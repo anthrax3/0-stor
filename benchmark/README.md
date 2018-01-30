@@ -35,7 +35,7 @@ python3 orchestrator.py --conf bench_config.yaml
 ```
 
 Orchestrator flags:
-``` bash
+```
 usage: orchestrator.py [-h] [-C string] [--out string]
 
 optional arguments:
@@ -47,13 +47,14 @@ optional arguments:
 
 ## Benchmark orchestrator
   
-The orchestrator sets up a benchmarking environment (zstordb and etcd metadata servers) and uses [`zstorbench`](../cmd/zstorbench/README.md) to collect the performance data. The orchestrator will generate the config files with scenarios and environment configuration for [`zstorbench`](../cmd/zstorbench/README.md) and process the output (of multiple zstorbench runs) to generate a report.
+The orchestrator sets up a benchmarking environment (zstordb and etcd metadata servers) and uses [`zstorbench`](/cmd/zstorbench/README.md) to collect the performance data. The orchestrator will generate the config files with scenarios and environment configuration for [`zstorbench`](/cmd/zstorbench/README.md) and process the output (of multiple zstorbench runs) to generate a report.
 
 ### Orchestrator config file
+
 Config file for the `benchmark orchestrator` consists of three parts (main fields):
 
   * `benchmarks`: configuration of what to benchmark
-  * `template`: template configuration for [`zstorbench`](../cmd/zstorbench/README.md) client
+  * `template`: template configuration for [`zstorbench`](/cmd/zstorbench/README.md) client
   * `profile`: defines the type of profiling that's done during benchmarking
 
 The `benchmarks` field contains information to build the benchmarking scenarios. In case if `benchmarks` is not provided, the benchmark will run for a single set of parameters, provided in the `template`.
@@ -63,7 +64,7 @@ The config for each benchmark is marked by the `prime_parameter` field and an op
 If only `prime_parameter` is given, the `orchestrator` creates a plot of the throughput versus values in `range` of the `prime parameter`.
 If both `prime_parameter` and `second_parameter` are given, a few plots will be combined in the output figure, one for each value in `range` of `second_parameter`.
 
-The `template` field represents the template of the config file for [`zstorbench`](../cmd/zstorbench/README.md).
+The `template` field represents the template of the config file for [`zstorbench`](/cmd/zstorbench/README.md).
 
 Number of `zstordb` servers to be run is deducted from `distribution_data` + `distribution_parity`. The number of `etcd` metadata servers to be run is defined by `meta_shards_nr`.
 
@@ -74,11 +75,10 @@ The `profile` field sets the type of profiling done during benchmarking, if empt
 
 Example of a config file:
 ``` yaml
-# benchmark orchestrator config for 1.1.0-beta-2
 benchmarks: # list of benchmark scenarios
 - prime_parameter:    # primary parameter of the benchmark *
     id: value_size    # id of the primary parameter that is being benchmarked
-    range: 128, 256, 512, 1024, 2048, 4096 # values of the primary parameter
+    range: 1024, 2048, 4096 # values of the primary parameter
   second_parameter:    # secondary parameter of the benchmark *
     id: key_size       # id of the secondary parameter that is being benchmarked
     range: 24, 48, 96  # values of the primary parameter
@@ -94,7 +94,16 @@ benchmarks: # list of benchmark scenarios
     range: default, best_speed, best_compression    
 template:         # config for benchmark client
   zstor_config:  
-    namespace: mynamespace # itsyou.online namespace
+    iyo:  # If empty or omitted, the zstordb servers set up for the benchmark 
+          # need to be run with the no-auth flag.
+          # For benching with authentication, provide it with valid itsyou.online credentials
+      organization: "bench_org"
+      app_id: "an_iyo_bench_app_id"
+      app_secret: "an_iyo_bench_app_secret"
+    namespace: mynamespace  # If IYO credentials are provided,
+                            # this needs to be a valid and existing IYO namespace,
+                            # otherwise this can be any name or omitted
+                            # and the namespace will be generated
     datastor:
       pipeline:
         block_size: 4096
