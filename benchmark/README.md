@@ -22,8 +22,24 @@ Install python dependencies:
 ```bash
 pip3 install -r benchmark/orchestrator/requirements.txt
 
-# matplotlib dependency 
+# matplotlib dependency (tkinter)
 sudo apt-get install python3-tk
+
+# tkinter with dnf
+sudo dnf install python3-tkinter
+
+# tkinter with yum
+sudo yum install python3-tkinter
+
+# tkinter with homebrew
+# If you don't have Xcode command line tools
+Xcode-select install
+# If you don't have Tcl/Tk brew installation (check brew list)
+brew install homebrew/dupes/tcl-tk
+# if python was not installed with option --with-tcl-tk
+brew uninstall python3
+# install python again linking it to the brew installed Tcl/Tk
+brew install python3 --with-tcl-tk
 ```
 
 To start the benchmarking, provide a YAML [config file](#orchestrator-config-file) for the `benchmark orchestrator` (`0-stor/benchmark/orchestrator/orchestrator.py`) and run the `orchestrator` Python script:
@@ -60,6 +76,7 @@ The config for each benchmark is marked by the `prime_parameter` field and an op
 
 If only `prime_parameter` is given, the `orchestrator` creates a plot of the throughput versus values in `range` of the `prime parameter`.
 If both `prime_parameter` and `second_parameter` are given, a few plots will be combined in the output figure, one for each value in `range` of `second_parameter`.
+Providing only a `second_parameter` will cause an error.
 
 The `template` field represents the template of the config file for [`zstorbench`](/cmd/zstorbench/README.md).
 
@@ -72,25 +89,25 @@ The `profile` field sets the type of profiling done during benchmarking, if empt
 
 Example of a config file:
 ``` yaml
-benchmarks: # list of benchmark scenarios
-- prime_parameter:    # primary parameter of the benchmark *
-    id: value_size    # id of the primary parameter that is being benchmarked
-    range: 1024, 2048, 4096 # values of the primary parameter
-  second_parameter:    # secondary parameter of the benchmark *
-    id: key_size       # id of the secondary parameter that is being benchmarked
-    range: 24, 48, 96  # values of the primary parameter
+benchmarks: # (required) list of benchmark scenarios
+- prime_parameter:    # (required) primary parameter of the benchmark *
+    id: value_size    # (required) id of the primary parameter that is being benchmarked
+    range: [1024, 2048, 4096] # (required) values of the primary parameter
+  second_parameter:    # (optional) secondary parameter of the benchmark *
+    id: key_size       # (required)id of the secondary parameter that is being benchmarked
+    range: [24, 48, 96]  # (required) values of the primary parameter
 - prime_parameter:
     id: data_shards   
-    range: 1,2,5,10,20
+    range: [1,2,5,10,20]
   second_parameter:
     id: clients
-    range: 1, 2, 3
+    range: [1, 2, 3]
 - prime_parameter:    # primary parameter of the benchmark *
     id:
       compression: mode       # id of the secondary parameter that is being benchmarked
-    range: default, best_speed, best_compression    
-template:         # config for benchmark client
-  zstor:  
+    range: [default, best_speed, best_compression]   
+template: # config for benchmark client (zstorbench)
+  zstor:  # zstor configuration
     iyo:  # If empty or omitted, the zstordb servers set up for the benchmark 
           # need to be run with the no-auth flag.
           # For benching with authentication, provide it with valid itsyou.online credentials
@@ -101,26 +118,27 @@ template:         # config for benchmark client
                             # this needs to be a valid and existing IYO namespace,
                             # otherwise this can be any name or omitted
                             # and the namespace will be generated
-    datastor:
+    datastor:   # (optional, will use 1 data shard with default values if omitted) datastor config.
       pipeline:
         block_size: 4096
         compression:
+          type: gzip
           mode: default
         distribution:
-          data_shards: 2
-          parity_shards: 1
-    metastor:
-      meta_shards_nr: 2
-  benchmark:
-    clients: 1      # number of concurrent benchmarking clients
-    method: write   # other options: read
-    result_output: per_second
-    operations: 0   # max number of operations(reads/writes) in benchmark **
-    duration: 30    # max duration of the benchmark **
-    key_size: 48
-    value_size: 128
-    zstordb_jobs: 512 # defines GOMAXPROCS for zstordb. optional; default 0
-profile: cpu
+          data_shards: 2    # amount of data shards the orchestrator needs to setup for benchmarking
+          parity_shards: 1  # amount of parity shards the orchestrator needs to setup for benchmarking
+    metastor:               # (optional, will use 1 meta shard with default values if omitted) metastor config.
+      meta_shards_nr: 2     # amount of metadata servers the orchestrator needs to setup for benchmarking
+  benchmark:        # benchmark configuration
+    clients: 1      # (optional, default 1) number of concurrent benchmarking clients
+    method: write   # (optional) other options: read (default)
+    result_output: per_second # (optional, default "") other options: "" (no per interval in result), per_minute, per_hour
+    operations: 0     # (optional if duration specified) max number of operations(reads/writes) in benchmark **
+    duration: 30      # (optional if operations specified) max duration of the benchmark **
+    key_size: 48      # (required)
+    value_size: 128   # (required)
+    zstordb_jobs: 10  # (optional, default: 0) defines GOMAXPROCS for zstordb.
+profile: cpu  # (optional, default: no profiling) other options: mem, block, trace
 
 # * in the output figures 'prime_parameter.range' is used in the x-axis, while 'second_parameter.range' enables multiplot.
 # ** if both 'operations' and 'duration' are given, the benchmarking stops on the first condition met.
