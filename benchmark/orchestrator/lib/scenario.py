@@ -59,13 +59,13 @@ class Scenario:
         if not self.config:
             raise InvalidBenchmarkResult("scenario config is missing")
 
-        self.zstor_config = self.config.get('zstor_config', None)
+        self.zstor_config = self.config.get('zstor', None)
         if not self.zstor_config:
-            raise InvalidBenchmarkResult("zstor_config is missing")
+            raise InvalidBenchmarkResult("zstor config is missing")
 
-        self.bench_config = self.config.get('bench_config', None)     
+        self.bench_config = self.config.get('benchmark', None)     
         if not self.bench_config:
-            raise InvalidBenchmarkResult("bench_config is missing")
+            raise InvalidBenchmarkResult("benchmark config is missing")
 
         self.results = self.scenario.get('results', None)
         if not self.results:
