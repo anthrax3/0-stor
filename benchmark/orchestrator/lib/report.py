@@ -173,7 +173,7 @@ class Report:
         ''' Shortens large values of bitrate to KB/s or MB/s '''
 
         kbyte, mbyte, byte = 'KB/s', 'MB/s', 'Byte/s'
-        dim = {byte: 1, kbyte: 1024, mbyte: 1048576}
+        dim = {byte: 1, kbyte: 1000, mbyte: 1000000}
         if value_in_bytes > dim[mbyte]:
             return value_in_bytes/dim[mbyte], dim[mbyte], mbyte
 
@@ -244,16 +244,14 @@ class Report:
             # add bar plot to the figure
             th_humanized = [t/reduce_times for t in th]
             ax.bar(rng, th_humanized, width, label=legend)
+            plt.ylim(ymax=max_throughput*1.3)
             lgd = ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
 
             # add labels to bars
             for j, v in enumerate(th):
                 text_x = rng[j]
                 text_y = max(0, v/reduce_times)
-                if text_y < max_throughput/2:
-                    va = 'bottom'
-                else:
-                    va = 'top'
+                va = 'bottom' # alinement of the bar label
                 ax.text(text_x, text_y, ' %s/s '%humanize.naturalsize(v), color='black', fontweight='bold', rotation=90, ha='center',va=va)
 
             # shift bars for the next plot
