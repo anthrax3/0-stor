@@ -4,48 +4,33 @@
  # Report 1 
 **Benchmark config:** 
 ```yaml 
-scenario:
-  bench_config:
-    clients: 1
-    duration: 30
-    key_size: 128
-    method: write
-    operations: 0
-    result_output: per_second
-    value_size: 8192
-  zstor_config:
+benchmark:
+  clients: 0
+  duration: 10
+  key_size: 96000
+  method: write
+  operations: 0
+  result_output: per_second
+  value_size: 4096000
+zstor:
+  datastor:
     pipeline:
       block_size: 4096
       compression:
-        mode: default
-        type: gzip
+        mode: ''
+        type: snappy
       distribution:
-        data_shards: 3
+        data_shards: 2
         parity_shards: 1
       encryption:
-        private_key: ab345678901234567890123456789012
+        private_key: ''
         type: aes
 
 ```
 ![Fig: throughput vs parameter](fig1.png)
- <h3> Throughput, byte/s: </h3>
-            <head> 
-                <style>
-                    table, th, td {
-                        border: 1px solid black;
-                        border-collapse: collapse;
-                    }
-                    th, td {
-                        text-align: left;    
-                    }
-                </style>
-            </head>
-            <table>  
-                <tr> <th> value_size
-...
-</th><th> key_size
-...
- = 64 </th><th> key_size
-...
- = 128 </th> </tr> <tr> <th> 4096 </th><th> 250174 </th><th> 79182 </th></tr><tr> <th> 8192 </th><th> 105327 </th><th> 170807 </th></tr>
- </table></details>
+ ### Throughput: 
+| value_size | key_size = 48.0 kB |key_size = 96.0 kB | 
+|---|---|---| 
+ | 1.0 MB |8.9 MB/s |9.3 MB/s | 
+| 2.0 MB |9.0 MB/s |9.3 MB/s | 
+| 4.1 MB |6.9 MB/s |9.5 MB/s | 

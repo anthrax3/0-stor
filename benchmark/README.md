@@ -159,7 +159,9 @@ The field `result_output` defines a time interval to collect intermediate data t
 
 Example of a time plot report Markdown file can be found [here](assets/example_report/timeplots.md).
 
-The profiling results can be found in the `profile_information` sub-folder.
+The example reports are generated using the example config that can be found [here](assets/example_orchestrator_config.yaml).
+
+If profiling was enabled, the profiling results can be found in the `profile_information` sub-folder.
 
 Examples of generated figures for report.md:  
 ![Fig](assets/fig1.png) 
