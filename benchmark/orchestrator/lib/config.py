@@ -64,9 +64,9 @@ class Config:
         self.restore_template()
 
         # fetch bench_config from template
-        bench_config = self.template.get('bench_config', None)
+        bench_config = self.template.get('benchmark', None)
         if not bench_config:
-            raise InvalidBenchmarkConfig('no bench_config given in template')
+            raise InvalidBenchmarkConfig('no bench given in template')
         self.zstordb_jobs = bench_config.get('zstordb_jobs', 0)
 
         if not self.template:
@@ -83,6 +83,9 @@ class Config:
         self.count_profile = 0
 
         self.deploy = SetupZstor()
+
+        self.meta_shards_nr = 1
+        self.data_shards_nr = 1
 
     def new_profile_dir(self, path=""):
         """
@@ -167,20 +170,51 @@ class Config:
         Fetch current zstor server deployment config
                 ***specific for beta2***
         """
-        try:
-            self.datastor =  self.template['zstor_config']['datastor']
-            distribution = self.datastor['pipeline']['distribution']
-            self.data_shards_nr=distribution['data_shards'] + distribution['parity_shards']
-        except:
-            raise InvalidBenchmarkConfig("distribution config is not correct")
-        try:
-            self.metastor  = self.template['zstor_config']['metastor']
-            self.meta_shards_nr = self.metastor['meta_shards_nr']
-        except:
-            raise InvalidBenchmarkConfig("number of metastor servers is not given")
+        if 'zstor' not in self.template:
+            raise InvalidBenchmarkConfig('zstor config is missing')
+
+        zstor = self.template.get('zstor', {})
+        if 'datastor' not in zstor:
+            raise InvalidBenchmarkConfig('datastor config is missing')
+
+        self.datastor =  zstor['datastor']
+        if 'pipeline' not in self.datastor:
+            raise InvalidBenchmarkConfig('pipeline config is missing')        
+
+        pipeline = self.datastor['pipeline']
+        distribution = pipeline.get('distribution', {})
+
+        data_shards = distribution.get('data_shards', 1)
+        parity_shards = distribution.get('parity_shards', 0)
+
+        pipeline.update({'distribution': {
+                            'data_shards': data_shards, 
+                            'parity_shards':parity_shards}})
+
+        self.data_shards_nr =  int(data_shards) + int(parity_shards)
+
+        if 'metastor' not in zstor:
+            zstor.update({'metastor': {'meta_shards_nr':1} })
+        
+        self.metastor = zstor['metastor']
+        if 'meta_shards_nr' in self.metastor:
+            self.meta_shards_nr = int(self.metastor['meta_shards_nr'])
+
+
+
+
+        #     distribution = self.datastor['pipeline']['distribution']
+        #     self.data_shards_nr=distribution['data_shards'] + distribution['parity_shards']
+        # except:
+        #     raise InvalidBenchmarkConfig("distribution config is not correct")
+        # try:
+        #     self.metastor  = self.template['zstor']['metastor']
+        #     self.meta_shards_nr = self.metastor['meta_shards_nr']
+        # except:
+        #     raise InvalidBenchmarkConfig("number of metastor servers is not given")
         
         self.no_auth = True
-        IYOtoken = self.template['zstor_config'].get('iyo', None)
+        IYOtoken = self.template['zstor'].get('iyo', None)
         if IYOtoken:
             self.no_auth = False
 
@@ -234,7 +268,6 @@ class Config:
     def stop_zstor(self):
         """ Stop zstordb and datastor servers """
         self.deploy.stop()
-
         self.datastor.update({'shards': []})
         self.metastor.update({'db':{'endpoints': []}})       
 

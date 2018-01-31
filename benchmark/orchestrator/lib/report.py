@@ -50,7 +50,8 @@ FILTER_KEYS = {'organization',
                 'shards',
                 'db',
                 'hashing',
-                'metastor'}
+                'metastor',
+                'tls'}
 BYTE_KEYS = { 'value_size', 'block_size', 'key_size'}
 
 class Aggregator:
