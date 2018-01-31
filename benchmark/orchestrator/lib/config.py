@@ -87,6 +87,9 @@ class Config:
         self.meta_shards_nr = 1
         self.data_shards_nr = 1
 
+        self.datastor = {}
+        self.metastor = {}
+
     def new_profile_dir(self, path=""):
         """
         Create new directory for profile information in given path and dump current config
@@ -170,20 +173,22 @@ class Config:
         Fetch current zstor server deployment config
                 ***specific for beta2***
         """
-        if 'zstor' not in self.template:
-            raise InvalidBenchmarkConfig('zstor config is missing')
 
+        # ensure that zstor config is given as dictionary
+        if not self.template.get('zstor', None):
+            self.template.update({'zstor': {}})
         zstor = self.template.get('zstor', {})
-        if 'datastor' not in zstor:
-            raise InvalidBenchmarkConfig('datastor config is missing')
 
+        # ensure that datastor config is given as dictionary
+        if not zstor.get('datastor', None):
+            zstor.update({'datastor': {}})
         self.datastor =  zstor['datastor']
-        if 'pipeline' not in self.datastor:
-            raise InvalidBenchmarkConfig('pipeline config is missing')        
 
+        # ensure that pipeline config is given as dictionary
+        if not self.datastor.get('pipeline', None):
+            self.datastor.update({'pipeline': {}})
         pipeline = self.datastor['pipeline']
         distribution = pipeline.get('distribution', {})
-
         data_shards = distribution.get('data_shards', 1)
         parity_shards = distribution.get('parity_shards', 0)
 
@@ -199,13 +204,12 @@ class Config:
         self.metastor = zstor['metastor']
         if 'meta_shards_nr' in self.metastor:
             self.meta_shards_nr = int(self.metastor['meta_shards_nr'])
-
       
-        self.no_auth = True
-
         IYOtoken = self.template['zstor'].get('iyo', None)
         if IYOtoken:
             self.no_auth = False
+        else:
+            self.no_auth = True
         
 
     def deploy_zstor(self, profile_dir="profile_zstordb"):
