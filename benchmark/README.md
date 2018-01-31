@@ -4,17 +4,17 @@
 
 ## Getting started
 
-Download the `zstor`repository.
+Download the `zstor` repository.
 ```bash
 git clone https://github.com/zero-os/0-stor.git
 
 # or 
-go get github.com/zero-os/0-stor
-# note: this will throw an error because the root of zstor does not contain any Go files.
+go get -u -d github.com/zero-os/0-stor/cmd/zstorbench
 ```
 
-Compile and install the current version of `zstor` by running the following command in the `0-stor` root:
+Install the `zstor` components by running following command in the zstor root of the repository:
 ```bash
+cd $GOPATH/src/github.com/zero-os/0-stor
 make install
 ```
 
@@ -93,7 +93,7 @@ benchmarks: # list of benchmark scenarios
       compression: mode       # id of the secondary parameter that is being benchmarked
     range: default, best_speed, best_compression    
 template:         # config for benchmark client
-  zstor_config:  
+  zstor:  
     iyo:  # If empty or omitted, the zstordb servers set up for the benchmark 
           # need to be run with the no-auth flag.
           # For benching with authentication, provide it with valid itsyou.online credentials
@@ -114,7 +114,7 @@ template:         # config for benchmark client
           parity_shards: 1
     metastor:
       meta_shards_nr: 2
-  bench_config:
+  benchmark:
     clients: 1      # number of concurrent benchmarking clients
     method: write   # other options: read
     result_output: per_second
