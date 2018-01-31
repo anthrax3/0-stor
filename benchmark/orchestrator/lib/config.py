@@ -200,23 +200,13 @@ class Config:
         if 'meta_shards_nr' in self.metastor:
             self.meta_shards_nr = int(self.metastor['meta_shards_nr'])
 
-
-
-
-        #     distribution = self.datastor['pipeline']['distribution']
-        #     self.data_shards_nr=distribution['data_shards'] + distribution['parity_shards']
-        # except:
-        #     raise InvalidBenchmarkConfig("distribution config is not correct")
-        # try:
-        #     self.metastor  = self.template['zstor']['metastor']
-        #     self.meta_shards_nr = self.metastor['meta_shards_nr']
-        # except:
-        #     raise InvalidBenchmarkConfig("number of metastor servers is not given")
-        
+      
         self.no_auth = True
+
         IYOtoken = self.template['zstor'].get('iyo', None)
         if IYOtoken:
             self.no_auth = False
+        
 
     def deploy_zstor(self, profile_dir="profile_zstordb"):
         """
