@@ -275,14 +275,18 @@ class Benchmark():
     """ Benchmark class is used defines and validates benchmark parameter """
 
     def __init__(self, parameter={}):
-       
+        
         if parameter:
             self.id = parameter.get('id', None)
-            self.range = parameter.get('range', None)
+            self.range = parameter.get('range', [])
+
+            # check if parameter id or range are missing
             if not self.id or not self.range:
                 raise InvalidBenchmarkConfig("parameter id or range is missing")
             
-            if isinstance(self.id, dict):
+            # check if given parameter id is present in list of supported parameters
+            if isinstance(self.id, dict):   
+                # if parameter id is given as dictionary, check if included in PARAMETERS_DICT          
                 def contain(d, id):
                     if isinstance(d, dict) and isinstance(id, dict):
                         for key in list(d.keys()):
@@ -295,15 +299,10 @@ class Benchmark():
                     return False
                 if not contain(PARAMETERS_DICT, self.id):
                     raise InvalidBenchmarkConfig("parameter {0} is not supported".format(self.id))
-            else:
+            else: 
+                # if parameter id is given as string check if included in PARAMETERS
                 if self.id not in PARAMETERS:
-                    raise InvalidBenchmarkConfig("parameter {0} is not supported".format(self.id))
-            
-            try:
-                self.range = split("\W+", self.range.strip(',-!?.'))
-            except:
-                self.range = [self.range]
-
+                    raise InvalidBenchmarkConfig("parameter {0} is not supported".format(self.id))                                
         else:
             # return empty Benchmark
             self.range = [' ']
