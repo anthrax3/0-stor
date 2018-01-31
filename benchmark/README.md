@@ -6,9 +6,6 @@
 
 Download the `zstor` repository.
 ```bash
-git clone https://github.com/zero-os/0-stor.git
-
-# or 
 go get -u -d github.com/zero-os/0-stor/cmd/zstorbench
 ```
 
@@ -18,7 +15,7 @@ cd $GOPATH/src/github.com/zero-os/0-stor
 make install
 ```
 
-Make sure `etcd` is installed if benchmarking with `etcd` as metadata server. On how to install `etcd`, check the [etcd documentation](https://coreos.com/etcd/docs/latest/).
+Make sure `etcd` is installed if benchmarking with `etcd` as metadata server. On how to install `etcd`, check the [etcd documentation](https://coreos.com/etcd/docs/3.2.4/index.html).
 Zstor requires	etcd 3.2.4 or any higher stable release.
 
 Install python dependencies:
