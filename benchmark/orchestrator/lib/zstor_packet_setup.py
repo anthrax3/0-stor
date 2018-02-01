@@ -128,6 +128,7 @@ class SetupZstorPacket:
                 prefab.core.download(profdir, self.zstordb_prof_dest)
 
             self.p_client.removeDevice(hostname)
+        self.data_shards = []
 
     def run_meta_shards(self, servers=1, 
                               facility='ams1', 
@@ -186,6 +187,7 @@ class SetupZstorPacket:
         for hostname, prefab in self._meta_devices.items():
             pass
             self.p_client.removeDevice(hostname)
+        self.meta_shards = []
 
     def init_benchmark(self, 
                         branch="master", 
