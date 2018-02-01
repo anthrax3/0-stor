@@ -66,7 +66,7 @@ class Config:
         # fetch bench_config from template
         bench_config = self.template.get('benchmark', None)
         if not bench_config:
-            raise InvalidBenchmarkConfig('no bench given in template')
+            raise InvalidBenchmarkConfig('no benchmark config given in the template')
         self.zstordb_jobs = bench_config.get('zstordb_jobs', 0)
 
         if not self.template:
@@ -205,12 +205,7 @@ class Config:
         if 'meta_shards_nr' in self.metastor:
             self.meta_shards_nr = int(self.metastor['meta_shards_nr'])
       
-        IYOtoken = self.template['zstor'].get('iyo', None)
-        if IYOtoken:
-            self.no_auth = False
-        else:
-            self.no_auth = True
-        
+        self.IYOtoken = self.template['zstor'].get('iyo', None)
 
     def deploy_zstor(self, profile_dir="profile_zstordb"):
         """
@@ -220,7 +215,7 @@ class Config:
 
         self.update_deployment_config()
         self.deploy.run_data_shards(servers=self.data_shards_nr,
-                                        no_auth=self.no_auth,
+                                        no_auth=(self.IYOtoken == None),
                                         jobs=self.zstordb_jobs,
                                         profile=self.profile,
                                         profile_dir=profile_dir)
@@ -268,8 +263,7 @@ class Config:
 class Benchmark():
     """ Benchmark class is used defines and validates benchmark parameter """
 
-    def __init__(self, parameter={}):
-        
+    def __init__(self, parameter={}):       
         if parameter:
             self.id = parameter.get('id', None)
             self.range = parameter.get('range', [])
