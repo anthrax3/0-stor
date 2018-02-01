@@ -52,7 +52,7 @@ class Config:
         # fetch bench_config from template
         bench_config = self.template.get('bench_config', None)
         if not bench_config:
-            raise InvalidBenchmarkConfig('no bench_config given in template')
+            raise InvalidBenchmarkConfig('no benchmark config given in the template')
         self.zstordb_jobs = bench_config.get('zstordb_jobs', 0)
 
         if not self.template:
@@ -69,6 +69,9 @@ class Config:
         self.count_profile = 0
 
         self.deploy = SetupZstor()
+
+        self.meta_shards_nr = 1
+        self.data_shards_nr = 1
 
     def new_profile_dir(self, path=""):
         """
@@ -144,30 +147,44 @@ class Config:
     def update_deployment_config(self):
         """ 
         Fetch current zstor server deployment config
-                ***specific for beta2***
+                (specific for 1.1.0-beta-2)
         """
-        try:
-            self.zstor_config =  self.template['zstor_config']
-            distribution = self.zstor_config['pipeline']['distribution']
-            self.data_shards_nr=distribution['data_shards'] + distribution['parity_shards']
-        except:
-            raise InvalidBenchmarkConfig("distribution config is not correct")
-        try:
-            self.metastor  = self.template['zstor_config']['metastor']
-            self.meta_shards_nr = self.metastor['meta_shards_nr']
-        except:
-            raise InvalidBenchmarkConfig("number of metastor servers is not given")
+
+        # ensure that zstor config is given as dictionary
+        if not self.template.get('zstor_config', None):
+            self.template.update({'zstor_config': {}})
+        self.zstor_config = self.template.get('zstor_config', {})
+
+        # ensure that pipeline config is given as dictionary
+        if not self.zstor_config.get('pipeline', None):
+            self.zstor_config.update({'pipeline': {}})
+
+        pipeline = self.zstor_config['pipeline']
+        distribution = pipeline.get('distribution', {})
+
+        data_shards = distribution.get('data_shards', 1)
+        parity_shards = distribution.get('parity_shards', 0)
+
+        pipeline.update({'distribution': {
+                            'data_shards': data_shards, 
+                            'parity_shards':parity_shards}})
+
+        self.data_shards_nr =  int(data_shards) + int(parity_shards)
+
+        if 'metastor' not in self.zstor_config:
+            self.zstor_config.update({'metastor': {'meta_shards_nr':1} })
         
-        self.no_auth = True
-        IYOtoken = self.template['zstor_config'].get('iyo', None)
-        if IYOtoken:
-            self.no_auth = False
+        self.metastor = self.zstor_config['metastor']
+        if 'meta_shards_nr' in self.metastor:
+            self.meta_shards_nr = int(self.metastor['meta_shards_nr'])
+
+        self.IYOtoken = self.zstor_config.get('iyo', None)
 
     def deploy_zstor(self):
         """ Run zstordb and etcd servers """
-
+        
         self.deploy.run_zstordb_servers(servers=self.data_shards_nr,
-                                        no_auth=self.no_auth,
+                                        no_auth=(self.IYOtoken == None),
                                         jobs=self.zstordb_jobs)
         self.deploy.run_etcd_servers(servers=self.meta_shards_nr)
 
@@ -204,15 +221,18 @@ class Config:
 class Benchmark():
     """ Benchmark class is used defines and validates benchmark parameter """
 
-    def __init__(self, parameter={}):
-       
+    def __init__(self, parameter={}):       
         if parameter:
             self.id = parameter.get('id', None)
-            self.range = parameter.get('range', None)
+            self.range = parameter.get('range', [])
+
+            # check if parameter id or range are missing
             if not self.id or not self.range:
                 raise InvalidBenchmarkConfig("parameter id or range is missing")
             
-            if isinstance(self.id, dict):
+            # check if given parameter id is present in list of supported parameters
+            if isinstance(self.id, dict):   
+                # if parameter id is given as dictionary, check if included in PARAMETERS_DICT          
                 def contain(d, id):
                     if isinstance(d, dict) and isinstance(id, dict):
                         for key in list(d.keys()):
@@ -225,15 +245,10 @@ class Benchmark():
                     return False
                 if not contain(PARAMETERS_DICT, self.id):
                     raise InvalidBenchmarkConfig("parameter {0} is not supported".format(self.id))
-            else:
+            else: 
+                # if parameter id is given as string check if included in PARAMETERS
                 if self.id not in PARAMETERS:
-                    raise InvalidBenchmarkConfig("parameter {0} is not supported".format(self.id))
-            
-            try:
-                self.range = split("\W+", self.range.strip(',-!?.'))
-            except:
-                self.range = [self.range]
-
+                    raise InvalidBenchmarkConfig("parameter {0} is not supported".format(self.id))                                
         else:
             # return empty Benchmark
             self.range = [' ']

@@ -40,8 +40,8 @@ FILTER_KEYS = {'organization',
                 'shards',
                 'db',
                 'hashing',
-                'datastor',
-                'metastor'}
+                'metastor',
+                'datastor'}
 BYTE_KEYS = { 'value_size', 'block_size', 'key_size'}
 
 class Aggregator:
@@ -220,7 +220,7 @@ class Report:
     def humanize_bitrate(value_in_bytes):
         ''' Shortens large values of bitrate to KB/s or MB/s '''
 
-        kbyte, mbyte, byte = 'KB/s', 'MB/s', 'Byte/s'
+        kbyte, mbyte, byte = 'KiB/s', 'MiB/s', 'Byte/s'
         dim = {byte: 1, kbyte: 1024, mbyte: 1048576}
         if value_in_bytes > dim[mbyte]:
             return value_in_bytes/dim[mbyte], dim[mbyte], mbyte
@@ -232,7 +232,7 @@ class Report:
 
     def humanize_bytes(self, key, value):
         if key in BYTE_KEYS:
-            return humanize.naturalsize(value)
+            return humanize.naturalsize(value, binary=True)
         return value
 
     def _bar_plot(self, fig_name):
@@ -287,14 +287,18 @@ class Report:
             # add bar plot to the figure
             th_humanized = [t/reduce_times for t in th]
             ax.bar(rng, th_humanized, width, label=legend)
+
+            # add space for a bar label on top of the plot
+            plt.ylim(ymax=max_throughput*1.3)
+
             lgd = ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
 
             # add labels to bars
             for j, v in enumerate(th):
-                if i:
-                    if abs(v-self.aggregator.throughput[i-1][j])/max_throughput < diff_y:
-                        continue
-                ax.text(rng[j]-width/2, v/reduce_times+label_y_gap, '%s/s'%humanize.naturalsize(v), color='black', fontweight='bold')
+                text_x = rng[j]
+                text_y = max(0, v/reduce_times)
+                va = 'bottom' # alinement of the bar label
+                ax.text(text_x, text_y, ' %s/s '%humanize.naturalsize(v, gnu=True), color='black', fontweight='bold', rotation=90, ha='center',va=va)
 
             # shift bars for the next plot
             rng = [x+gap+width for x in rng]
@@ -318,7 +322,7 @@ class Report:
             for item in self.aggregator.benchmark.second.range:
                 if self.aggregator.benchmark.second.id:
                     if second_parameter in BYTE_KEYS:
-                        item = humanize.naturalsize(item)
+                        item = humanize.naturalsize(item, binary=True)
                     row_title += '%s = %s |'%(second_parameter, item)
                 else:
                     row_title += ' |'
@@ -327,10 +331,10 @@ class Report:
             # fill in the table
             for row, val in enumerate(self.aggregator.benchmark.prime.range):
                 if prime_parameter in BYTE_KEYS:
-                    val = humanize.naturalsize(val)                
+                    val = humanize.naturalsize(val, binary=True)                
                 row_values = '| %s |'%val
                 for col, _ in enumerate(self.aggregator.benchmark.second.range):
-                    row_values +=  '%s/s |'%str(humanize.naturalsize(self.aggregator.throughput[col][row]))
+                    row_values +=  '%s/s |'%str(humanize.naturalsize(self.aggregator.throughput[col][row], binary=True))
                 outfile.write('%s \n'%row_values)
 
     def add_timeplot(self):
