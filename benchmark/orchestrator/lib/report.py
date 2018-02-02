@@ -260,7 +260,7 @@ class Report:
         # figure settings
         n_plots = len(self.aggregator.throughput[0]) # number of plots in the figure
         n_samples = len(rng) # number of samples for each data set
-        width = rng[-1]/(n_samples*n_plots+1) # bar width
+        width = max(rng[-1],1)/(n_samples*n_plots+1) # bar width
         gap = width/10  # gap between bars
         diff_y = 0.1 # minimal relative difference in throughput between neighboring bars
 
