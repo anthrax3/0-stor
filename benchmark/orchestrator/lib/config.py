@@ -87,7 +87,6 @@ class Config:
         self.packets = config.get('packet.net', None)
         if self.packets:
             self.deployment = PACKETS_DEPLOYMENT
-            self.deploy = SetupZstorPacket()
 
             # set default options for packet.net config
             for key, val in DEFAULT_PACKETS_CONFIG.items():
@@ -97,8 +96,6 @@ class Config:
 
         else:
             self.deployment = LOCAL_DEPLOYMENT
-            self.deploy = SetupZstor()
-
 
         self.meta_shards_nr = 0
         self.data_shards_nr = 1
@@ -215,15 +212,17 @@ class Config:
         
         self.update_deployment_config()
         if self.deployment == LOCAL_DEPLOYMENT:
+            self.deploy = SetupZstor()
             self.deploy.run_data_shards(servers=self.data_shards_nr,
                                             no_auth=(self.IYOtoken == None),
                                             jobs=self.zstordb_jobs)
             self.deploy.run_meta_shards(servers=self.meta_shards_nr)            
             self.wait_local_servers_to_start()            
         if self.deployment == PACKETS_DEPLOYMENT:
+            self.deploy = SetupZstorPacket()
             thread_data_shards = Thread(target=self.deploy.run_data_shards,
                                    kwargs={'servers' : self.data_shards_nr,
-                                            'no_auth' : self.no_auth,
+                                            'no_auth' :(self.IYOtoken == None),
                                             'jobs' : self.zstordb_jobs,
                                             'facility' : self.packets['facility'],
                                             'plan' : self.packets['plan'],
@@ -283,6 +282,7 @@ class Config:
 
     def stop_zstor(self):
         self.deploy.stop()
+        del self.deploy
 
 class Benchmark():
     """ Benchmark class is used defines and validates benchmark parameter """
