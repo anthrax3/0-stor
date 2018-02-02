@@ -9,7 +9,7 @@ Download the `zstor` repository.
 go get -u -d github.com/zero-os/0-stor/cmd/zstorbench
 ```
 
-Install the `zstor` components by running following command in the zstor root of the repository:
+Install the `zstor` components by running following command in the root dir of the repository:
 ```bash
 cd $GOPATH/src/github.com/zero-os/0-stor
 make install

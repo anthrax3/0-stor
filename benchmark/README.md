@@ -9,7 +9,7 @@ Download the `zstor` repository.
 go get -u -d github.com/zero-os/0-stor/cmd/zstorbench
 ```
 
-Install the `zstor` components by running following command in the zstor root of the repository:
+Install the `zstor` components by running following command in the root dir of the repository:
 ```bash
 cd $GOPATH/src/github.com/zero-os/0-stor
 make install
@@ -18,28 +18,21 @@ make install
 Make sure `etcd` is installed if benchmarking with `etcd` as metadata server. On how to install `etcd`, check the [etcd documentation](https://coreos.com/etcd/docs/3.2.4/index.html).
 Zstor requires	etcd 3.2.4 or any higher stable release.
 
-Install python dependencies:
+If you don't have python you'll have to install this first,
+on top of that you'll need `tkinter`, as this is a dependency for `matplotlib`, a python library we use to generate graphs. Here is how you install those on the different *NIX OS families:
+
+OS | instructions |
+|---|---|
+Ubuntu / Debian | `sudo apt-get install python3-tk`
+Fedora (`dnf`) | `sudo dnf install python3-tkinter`
+using `yum`<br>(e.g. Fedora or CentOS) | `sudo yum install python3-tkinter`
+MacOS (`brew`) | `# If you don't have Xcode command line tools`<br>`Xcode-select install`<br>`# If you don't have Tcl/Tk brew installation (check brew list)`<br>`brew install homebrew/dupes/tcl-tk`<br>`# if python was not installed with option --with-tcl-tk`<br>`brew uninstall python3`<br>`# install python again linking it to the brew installed Tcl/Tk`<br>`brew install python3 --with-tcl-tk`
+
+Install python dependencies of the orchestrator:
+
 ```bash
+cd $GOPATH/src/github.com/zero-os/0-stor
 pip3 install -r benchmark/orchestrator/requirements.txt
-
-# matplotlib dependency (tkinter)
-sudo apt-get install python3-tk
-
-# tkinter with dnf
-sudo dnf install python3-tkinter
-
-# tkinter with yum
-sudo yum install python3-tkinter
-
-# tkinter with homebrew
-# If you don't have Xcode command line tools
-Xcode-select install
-# If you don't have Tcl/Tk brew installation (check brew list)
-brew install homebrew/dupes/tcl-tk
-# if python was not installed with option --with-tcl-tk
-brew uninstall python3
-# install python again linking it to the brew installed Tcl/Tk
-brew install python3 --with-tcl-tk
 ```
 
 To start the benchmarking, provide a YAML [config file](#orchestrator-config-file) for the `benchmark orchestrator` (`0-stor/benchmark/orchestrator/orchestrator.py`) and run the `orchestrator` Python script:
