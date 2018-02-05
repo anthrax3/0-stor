@@ -53,10 +53,7 @@ class Config:
     def __init__(self, config_file):
         # read config yaml file
         with open(config_file, 'r') as stream:
-            try:
-                config = yaml.load(stream)
-            except yaml.YAMLError as exc:
-                raise exc
+            config = yaml.load(stream)
         # fetch template config for benchmarking
         self._template0 = config.get('template', None)
         self.restore_template()
@@ -121,37 +118,39 @@ class Config:
             return directory
         return "" 
 
-    def benchmark_generator(self,benchmarks):
+    def benchmark_generator(self, benchmarks):
         """
         Iterate over list of benchmarks
-        """     
-        if benchmarks:
-            for bench in benchmarks:
-                yield BenchmarkPair(bench)        
-        else:
+        """
+
+        if not benchmarks:
             yield BenchmarkPair()
+        for bench in benchmarks:
+            yield BenchmarkPair(bench)
 
     def alter_template(self, key_id, val): 
         """
         Recurcively search and ppdate @id config field with new value @val
         """
+
         def replace(d, key_id, val):
             for key in list(d.keys()):
                 v = d[key]
-                if isinstance(v, dict):
-                    if isinstance(key_id, dict):
-                        if key == list(key_id.items())[0][0]:
-                            return replace(v, key_id[key], val)
-                    if replace(v, key_id, val):
-                        return True
-                else:
-                    if key == key_id:
-                        parameter_type = type(d[key])
-                        try:
-                            d[key] = parameter_type(val)
-                        except:
-                            raise InvalidBenchmarkConfig("for '{}' cannot convert val = {} to type {}".format(key,val,parameter_type))
-                        return True
+                if not isinstance(v, dict):
+                    if key != key_id:
+                        continue
+                    parameter_type = type(d[key])
+                    try:
+                        d[key] = parameter_type(val)
+                    except:
+                        raise InvalidBenchmarkConfig(
+                            "for '{}' cannot convert val = {} to type {}".format(
+                                key,val,parameter_type))
+                    return True
+                if isinstance(key_id, dict) and key == list(key_id.items())[0][0]:
+                    return replace(v, key_id[key], val)
+                if replace(v, key_id, val):
+                    return True
             return False
         if not replace(self.template, key_id, val):
             raise InvalidBenchmarkConfig("parameter %s is not supported"%key_id)
@@ -266,7 +265,7 @@ class Config:
                 try:
                     responce = check_output(['lsof', '-i', port])
                 except:
-                    responce=0
+                    responce = 0
                 if responce:
                     servers += 1
                 if time.time() > timeout:
@@ -287,60 +286,61 @@ class Config:
 class Benchmark():
     """ Benchmark class is used defines and validates benchmark parameter """
 
-    def __init__(self, parameter={}):       
-        if parameter:
-            self.id = parameter.get('id', None)
-            self.range = parameter.get('range', [])
-
-            # check if parameter id or range are missing
-            if not self.id or not self.range:
-                raise InvalidBenchmarkConfig("parameter id or range is missing")
-            
-            # check if given parameter id is present in list of supported parameters
-            if isinstance(self.id, dict):   
-                # if parameter id is given as dictionary, check if included in PARAMETERS_DICT          
-                def contain(d, id):
-                    if isinstance(d, dict) and isinstance(id, dict):
-                        for key in list(d.keys()):
-                            if id.get(key, None):
-                                if contain(d[key], id[key]):
-                                    return True
-                    else:    
-                        if id in d:
-                            return True
-                    return False
-                if not contain(PARAMETERS_DICT, self.id):
-                    raise InvalidBenchmarkConfig("parameter {0} is not supported".format(self.id))
-            else: 
-                # if parameter id is given as string check if included in PARAMETERS
-                if self.id not in PARAMETERS:
-                    raise InvalidBenchmarkConfig("parameter {0} is not supported".format(self.id))                                
-        else:
-            # return empty Benchmark
+    def __init__(self, parameter={}):
+        if not parameter:
+             # return empty Benchmark
             self.range = [' ']
             self.id = ''
+            return
+    
+        self.id = parameter.get('id')
+        self.range = parameter.get('range', [])
+
+        # check if parameter id or range are missing
+        if not self.id or not self.range:
+            raise InvalidBenchmarkConfig("parameter id or range is missing")
+        
+        # check if given parameter id is present in list of supported parameters
+        if not isinstance(self.id, dict):
+             # if parameter id is given as string check if included in PARAMETERS
+            if self.id not in PARAMETERS:
+                raise InvalidBenchmarkConfig("parameter {0} is not supported".format(self.id))
+            return
+    
+        # if parameter id is given as dictionary, check if included in PARAMETERS_DICT
+        def contain(d, id):
+            if not isinstance(d, dict) or not isinstance(id, dict):
+                return id in d
+            for key in list(d.keys()):
+                if id.get(key) and contain(d[key], id[key]):
+                    return True
+            return False
+        if not contain(PARAMETERS_DICT, self.id):
+            raise InvalidBenchmarkConfig("parameter {0} is not supported".format(self.id))
 
     def empty(self):
         """ Return True if benchmark is empty """
-        if (len(self.range) == 1) and not self.id:
-            return True
-        return False
+
+        return len(self.range) == 1 and not self.id
+
 class BenchmarkPair():
     """
     BenchmarkPair defines primary and secondary parameter for benchmarking
     """
-    def __init__(self, bench_pair={}):
-        if bench_pair:
-            # extract parameters from a dictionary
-            self.prime = Benchmark(bench_pair.pop('prime_parameter', None))
-            self.second = Benchmark(bench_pair.pop('second_parameter', None))
 
-            if not self.prime.empty() and self.prime.id == self.second.id:
-                raise InvalidBenchmarkConfig("primary and secondary parameters should be different")
-            
-            if self.prime.empty() and not self.second.empty():
-                raise InvalidBenchmarkConfig("if secondary parameter is given, primary parameter has to be given")
-        else:
+    def __init__(self, bench_pair={}):
+        if not bench_pair:
             # define empty benchmark
             self.prime = Benchmark()
-            self.second = Benchmark()                                                
+            self.second = Benchmark()
+            return
+
+        # extract parameters from a dictionary
+        self.prime = Benchmark(bench_pair.pop('prime_parameter', None))
+        self.second = Benchmark(bench_pair.pop('second_parameter', None))
+
+        if not self.prime.empty() and self.prime.id == self.second.id:
+            raise InvalidBenchmarkConfig("primary and secondary parameters should be different")
+
+        if self.prime.empty() and not self.second.empty():
+            raise InvalidBenchmarkConfig("if secondary parameter is given, primary parameter has to be given")
